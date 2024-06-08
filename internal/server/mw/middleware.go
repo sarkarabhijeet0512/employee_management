@@ -29,10 +29,9 @@ func ErrorHandlerX(log *logrus.Logger) gin.HandlerFunc {
 			if e.Status > 0 {
 				httpStatus = e.Status
 			}
-
+			// Respond with the custom error message
 			c.JSON(httpStatus, e)
 		}()
-
 		c.Next()
 	}
 }

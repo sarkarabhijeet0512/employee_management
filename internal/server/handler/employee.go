@@ -11,6 +11,7 @@ import (
 	model "employee_management/utils/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-pg/pg/v10"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,12 +45,12 @@ func (h *EmployeeHandler) EmployeeRegistration(c *gin.Context) {
 		}
 	}()
 	if err = c.ShouldBind(&req); err != nil {
-		err = er.New(err, er.UncaughtException).SetStatus(http.StatusUnprocessableEntity)
+		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
 	err = h.employeeService.UpsertEmployeeRegistration(dCtx, req)
 	if err != nil {
-		err = er.New(err, er.UncaughtException).SetStatus(http.StatusUnprocessableEntity)
+		err = er.New(err, er.UncaughtException).SetStatus(http.StatusInternalServerError)
 		return
 	}
 	res.Message = "Registration Sucessfully Done"
@@ -75,24 +76,35 @@ func (h *EmployeeHandler) FetchEmployee(c *gin.Context) {
 	employeeID, err = strconv.Atoi(fmt.Sprint(c.Param("id")))
 	if err != nil {
 		h.log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
-		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
+		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
 	data, err := h.employeeService.FetchEmployeeByID(dCtx, employeeID)
-	if err != nil {
-		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
+	switch err {
+	case pg.ErrNoRows:
+		err = nil
+		res.Message = "No data found"
+		res.Success = true
+		res.Data = data
+		c.JSON(http.StatusOK, res)
+		return
+	case nil:
+		res.Message = "Fetched Sucessfully"
+		res.Success = true
+		res.Data = data
+		c.JSON(http.StatusOK, res)
+		return
+	default:
+		err = er.New(err, er.UncaughtException).SetStatus(http.StatusInternalServerError)
 		return
 	}
-	res.Message = "Registration Sucessfully Done"
-	res.Success = true
-	res.Data = data
-	c.JSON(http.StatusOK, res)
 }
 
 func (h *EmployeeHandler) FetchALLEmployee(c *gin.Context) {
 	var (
 		err        error
 		dCtx       = context.Background()
+		req        = model.EmployeeFilter{}
 		res        = model.GenericRes{}
 		employeeID = 0
 	)
@@ -103,21 +115,30 @@ func (h *EmployeeHandler) FetchALLEmployee(c *gin.Context) {
 		}
 	}()
 
-	employeeID, err = strconv.Atoi(fmt.Sprint(c.Param("id")))
-	if err != nil {
-		h.log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
-		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
+	if err = c.ShouldBind(&req); err != nil {
+		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
-	data, err := h.employeeService.FetchEmployeeByID(dCtx, employeeID)
-	if err != nil {
-		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
+	data, pagination, err := h.employeeService.FetchALLEmployeeByFilter(dCtx, req)
+	switch err {
+	case pg.ErrNoRows:
+		err = nil
+		res.Message = "No data found"
+		res.Success = true
+		res.Data = []employee.Employee{}
+		c.JSON(http.StatusOK, res)
+		return
+	case nil:
+		res.Message = "Fetched Sucessfully"
+		res.Success = true
+		res.Data = data
+		res.Meta = pagination
+		c.JSON(http.StatusOK, res)
+		return
+	default:
+		err = er.New(err, er.UncaughtException).SetStatus(http.StatusInternalServerError)
 		return
 	}
-	res.Message = "Fetched Sucessfully"
-	res.Success = true
-	res.Data = data
-	c.JSON(http.StatusOK, res)
 }
 
 func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
@@ -135,7 +156,7 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 	}()
 
 	if err = c.ShouldBind(&req); err != nil {
-		err = er.New(err, er.UncaughtException).SetStatus(http.StatusUnprocessableEntity)
+		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
 

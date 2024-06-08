@@ -1,21 +1,24 @@
 package model
 
+import "time"
+
 type (
 	GenericRes struct {
-		Success bool       `json:"success"`
-		Message string     `json:"message"`
-		Data    any        `json:"data,omitempty"`
-		Meta    Pagination `json:"meta,omitempty"`
+		Success bool        `json:"success"`
+		Message string      `json:"message"`
+		Data    any         `json:"data,omitempty"`
+		Meta    *Pagination `json:"meta,omitempty"`
 	}
 	EmployeeFilter struct {
-		ID        int    `form:"id" json:"id" pg:"id"`
-		Title     string `form:"title" json:"title" pg:"title"`
-		Content   string `form:"content" json:"content" pg:"content"`
-		Author    string `form:"author" json:"author" pg:"author"`
-		Page      int    `form:"page,default=1"`
-		Limit     int    `form:"limit,default=20"`
-		IsActive  *bool  `form:"is_active" json:"is_active" pg:"is_active"`
-		CreatedAt string `form:"created_at" json:"created_at" pg:"created_at"`
+		ID         int       `form:"id" json:"id"`
+		Name       string    `form:"name" json:"name"`
+		Position   string    `form:"position" json:"position"`
+		Salary     float64   `form:"salary" json:"salary"`
+		Page       int       `form:"page,default=1"`
+		Limit      int       `form:"limit,default=20"`
+		ReturnData bool      `form:"return_data" json:"return_data"`
+		IsActive   *bool     `form:"is_active" json:"is_active"`
+		CreatedAt  time.Time `form:"created_at" time_format:"2006-01-02"`
 	}
 	Pagination struct {
 		CurrentPage    int `json:"current_page,omitempty"`

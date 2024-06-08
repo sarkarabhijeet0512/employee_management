@@ -5,11 +5,13 @@ var messages = map[string]string{
 	"2": "Unauthorized Request!",
 	"3": "Record not found!",
 	"4": "User not found!",
+	"5": "Invalid Request Body!",
 }
 
 var codes = map[Code]string{
-	UncaughtException: "1",
-	Unauthorized:      "2",
-	RecordNotFound:    "3",
-	UserNotFound:      "4",
+	UncaughtException:  "1",
+	Unauthorized:       "2",
+	RecordNotFound:     "3",
+	UserNotFound:       "4",
+	InvalidRequestBody: "5",
 }

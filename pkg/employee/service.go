@@ -28,33 +28,17 @@ func (s *Service) UpsertEmployeeRegistration(dCtx context.Context, req *Employee
 }
 
 func (s *Service) FetchEmployeeByID(dCtx context.Context, id int) (res *Employee, err error) {
-	res, err = s.Repo.fetchEmployeeByID(dCtx, id)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return s.Repo.fetchEmployeeByID(dCtx, id)
 }
 
-func (s *Service) FetchALLEmployeeByFilter(dCtx context.Context, req model.EmployeeFilter) (res *Employee, pagination *model.Pagination, err error) {
-	res, pagination, err = s.Repo.fetchALLEmployeeByFilter(dCtx, req)
-	if err != nil {
-		return nil, nil, err
-	}
-	return res, pagination, nil
+func (s *Service) FetchALLEmployeeByFilter(dCtx context.Context, req model.EmployeeFilter) (res []Employee, pagination *model.Pagination, err error) {
+	return s.Repo.fetchALLEmployeeByFilter(dCtx, req)
 }
 
 func (s *Service) UpdateEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error) {
-	res, err = s.Repo.updateEmployeeByID(dCtx, req)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return s.Repo.updateEmployeeByID(dCtx, req)
 }
 
 func (s *Service) SoftDeleteEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error) {
-	res, err = s.Repo.softDeleteEmployeeByID(dCtx, req)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return s.Repo.softDeleteEmployeeByID(dCtx, req)
 }

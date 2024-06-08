@@ -12,11 +12,12 @@ func _() {
 	_ = x[Unauthorized-1]
 	_ = x[UserNotFound-2]
 	_ = x[RecordNotFound-3]
+	_ = x[InvalidRequestBody-4]
 }
 
-const _Code_name = "UncaughtExceptionUnauthorizedUserNotFoundRecordNotFound"
+const _Code_name = "UncaughtExceptionUnauthorizedUserNotFoundRecordNotFoundInvalidRequestBody"
 
-var _Code_index = [...]uint8{0, 17, 29, 41, 55}
+var _Code_index = [...]uint8{0, 17, 29, 41, 55, 73}
 
 func (i Code) String() string {
 	if i < 0 || i >= Code(len(_Code_index)-1) {

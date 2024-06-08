@@ -6,6 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
 )
 
 //go:generate stringer -type Code
@@ -45,7 +49,7 @@ type E struct {
 	Message string `json:"message"`
 
 	// Info is link/URL to the logging system(Sentry/Kibana) to get more insight and trace error
-	Info string `json:"info"`
+	Info string `json:"-"`
 
 	// ErrorMsg is actual technical error occurred
 	ErrorMsg string `json:"-"`
@@ -54,10 +58,61 @@ type E struct {
 	NOP bool `json:"-"`
 }
 
+// Map of custom error messages for validation tags
+var customValidationMessages = map[string]string{
+	"required": "is required and cannot be empty",
+	"email":    "must be a valid email address",
+	"min":      "must be at least %s characters long",
+	"max":      "must be no more than %s characters long",
+	// Add more custom messages for other validation tags as needed
+}
+
+func getCustomErrorMessage(fieldName, tag, param string) string {
+	if msg, exists := customValidationMessages[tag]; exists {
+		if param != "" {
+			return fmt.Sprintf("%s %s", fieldName, strings.Replace(msg, "%s", param, 1))
+		}
+		return fmt.Sprintf("%s %s", fieldName, msg)
+	}
+	return fmt.Sprintf("%s failed validation on the '%s' tag", fieldName, tag)
+}
+
 // New constructs and returns new E object
 func New(err error, code Code) *E {
 	if err == nil {
 		err = errors.New("uncaught exception")
+	}
+
+	var validationErrors validator.ValidationErrors
+	var message string
+
+	switch {
+	case strings.Contains(err.Error(), "json: cannot unmarshal"):
+		// Handle JSON unmarshaling errors
+		re := regexp.MustCompile(`json: cannot unmarshal .* into Go struct field .*\.([a-zA-Z0-9_]+) of type .*`)
+		matches := re.FindStringSubmatch(err.Error())
+
+		message = "Invalid request body. Please check the input fields and types."
+
+		if len(matches) > 1 {
+			fieldName := matches[1]
+			message = fmt.Sprintf("Invalid type for field '%s'. Please check the input value.", fieldName)
+		}
+
+	case errors.As(err, &validationErrors):
+		// Handle validation errors
+		var errorMsgs []string
+		for _, fieldError := range validationErrors {
+			fieldName := fieldError.Field()
+			tag := fieldError.Tag()
+			param := fieldError.Param()
+			errorMsgs = append(errorMsgs, getCustomErrorMessage(fieldName, tag, param))
+		}
+		message = "Invalid request body. " + strings.Join(errorMsgs, ", ")
+
+	default:
+		// Handle other types of errors
+		message = messageByCode(code)
 	}
 
 	return &E{
@@ -65,7 +120,7 @@ func New(err error, code Code) *E {
 		Code:      code,
 		Exception: fmt.Sprintf("%s.%s", appName, code),
 		Status:    http.StatusInternalServerError,
-		Message:   messageByCode(code),
+		Message:   message,
 		ErrorMsg:  err.Error(),
 	}
 }

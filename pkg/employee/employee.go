@@ -20,6 +20,7 @@ type (
 		tableName struct{}  `pg:"employees,discard_unknown_columns"`
 		ID        int       `json:"id" pg:"id,pk"`
 		Name      string    `json:"name" pg:"name"`
+		Mobile    string    `json:"mobile" pg:"mobile,unique"`
 		Position  string    `json:"position" pg:"position"`
 		Salary    float64   `json:"salary" pg:"salary"`
 		IsActive  bool      `json:"is_active" pg:"is_active"`
