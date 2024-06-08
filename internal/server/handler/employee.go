@@ -184,7 +184,7 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 	case nil:
 		res.Message = "Updated Sucessfully"
 		res.Success = true
-		res.Data = req
+		res.Data = newReq
 		c.JSON(http.StatusOK, res)
 		return
 	default:
@@ -195,24 +195,25 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 
 func (h *EmployeeHandler) DeleteEmployee(c *gin.Context) {
 	var (
-		err  error
-		dCtx = context.Background()
-		req  = employee.Employee{}
-		res  = model.GenericRes{}
+		err        error
+		dCtx       = context.Background()
+		res        = model.GenericRes{}
+		employeeID = 0
 	)
 	defer func() {
 		if err != nil {
 			c.Error(err)
-			h.Log.WithField("span", req).Warn(err.Error())
+			h.Log.WithField("span", employeeID).Warn(err.Error())
 		}
 	}()
 
-	if err = c.ShouldBind(&req); err != nil {
-		err = er.New(err, er.UncaughtException).SetStatus(http.StatusUnprocessableEntity)
+	employeeID, err = strconv.Atoi(fmt.Sprint(c.Param("id")))
+	if err != nil {
+		h.Log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
+		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
-
-	Data, err := h.EmployeeService.SoftDeleteEmployeeByID(dCtx, req)
+	Data, err := h.EmployeeService.SoftDeleteEmployeeByID(dCtx, employeeID)
 	if err != nil {
 		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
 		return

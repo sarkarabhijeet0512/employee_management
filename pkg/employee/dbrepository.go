@@ -17,8 +17,8 @@ type Repository interface {
 	upsertEmployeeRegistration(context.Context, *Employee) error
 	fetchEmployeeByID(context.Context, int) (*Employee, error)
 	fetchALLEmployeeByFilter(context.Context, model.EmployeeFilter) ([]Employee, *model.Pagination, error)
-	softDeleteEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error)
-	updateEmployeeByID(ctx context.Context, employee *Employee) error
+	softDeleteEmployeeByID(context.Context, int) (*Employee, error)
+	updateEmployeeByID(context.Context, *Employee) error
 }
 
 // NewRepositoryIn is function param struct of func `NewRepository`
@@ -131,10 +131,10 @@ func (r *PGRepo) updateEmployeeByID(ctx context.Context, employee *Employee) err
 	return err
 }
 
-func (r *PGRepo) softDeleteEmployeeByID(ctx context.Context, req Employee) (*Employee, error) {
+func (r *PGRepo) softDeleteEmployeeByID(ctx context.Context, id int) (*Employee, error) {
 	employee := &Employee{}
 	r.Mutex.Lock()
-	_, err := r.Db.ModelContext(ctx, &employee).Set("is_active=?", false).Where("id = ?", employee.ID).Update(&req)
+	_, err := r.Db.ModelContext(ctx, employee).Set("is_active=?", false).Where("id = ?", id).Returning("*").Update()
 	r.Mutex.Unlock()
 	return employee, err
 }

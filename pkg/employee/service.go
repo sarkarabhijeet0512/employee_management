@@ -56,6 +56,6 @@ func (s *Service) UpdateEmployeeByID(ctx context.Context, employee *Employee) er
 // employee record based on the provided employee details. It interacts with a dbrepository to
 // execute the soft delete operation and returns either the deleted employee data or an error if
 // the operation encounters any issues.
-func (s *Service) SoftDeleteEmployeeByID(ctx context.Context, req Employee) (*Employee, error) {
-	return s.Repo.softDeleteEmployeeByID(ctx, req)
+func (s *Service) SoftDeleteEmployeeByID(ctx context.Context, id int) (*Employee, error) {
+	return s.Repo.softDeleteEmployeeByID(ctx, id)
 }
