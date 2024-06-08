@@ -1,17 +1,81 @@
-package employee
+package employee_test
 
 import (
 	"context"
+	"employee_management/config"
+	"employee_management/internal/server"
+	"employee_management/internal/server/handler"
+	"employee_management/pkg/employee"
 	"employee_management/utils"
+	"employee_management/utils/initialize"
 	model "employee_management/utils/models"
+	"fmt"
 	"math"
 	"sync"
+	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-pg/pg/v10"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/fx"
 )
+
+var Module = fx.Options(
+	fx.Provide(
+		NewDBRepository,
+	),
+)
+
+type (
+	// User represents the user entity
+	Employee struct {
+		ID        int       `json:"id" pg:"id,pk"`
+		Name      string    `json:"name" pg:"name" binding:"required"`
+		Mobile    string    `json:"mobile" pg:"mobile,unique" binding:"required"`
+		Position  string    `json:"position" pg:"position"`
+		Salary    float64   `json:"salary" pg:"salary"`
+		IsActive  bool      `json:"is_active" pg:"is_active"`
+		CreatedAt time.Time `json:"created_at" pg:"created_at"`
+		UpdatedAt time.Time `json:"updated_at" pg:"updated_at"`
+		// Mutex     *sync.Mutex
+	}
+)
+
+var router *gin.Engine
+var params server.Options
+
+func setupMockServer() (router *gin.Engine) {
+	gin.SetMode(gin.TestMode)
+	app := fx.New(
+		fx.Provide(
+			initialize.NewDB,
+		),
+		config.Module,
+		initialize.Module,
+		handler.Module,
+		server.Module,
+		employee.Module,
+		Module,
+		// Run app forever
+		fx.Populate(&params),
+	)
+	app.Start(context.TODO())
+	defer app.Stop(context.TODO())
+	router = server.SetupRouter(&params)
+	return
+}
+func init() {
+	router = setupMockServer()
+}
+func setupTest() *PGRepo {
+	log := logrus.New()
+	repo := &PGRepo{
+		Log: log,
+		Db:  params.PostgresDB,
+	}
+	return repo
+}
 
 type Repository interface {
 	upsertEmployeeRegistration(context.Context, *Employee) error
@@ -53,7 +117,6 @@ func (r *PGRepo) upsertEmployeeRegistration(ctx context.Context, req *Employee) 
 	_, err := r.Db.ModelContext(ctx, req).OnConflict("(mobile) DO UPDATE").Insert()
 	return err
 }
-
 func (r *PGRepo) fetchEmployeeByID(ctx context.Context, id int) (*Employee, error) {
 	employee := &Employee{}
 	err := r.Db.ModelContext(ctx, employee).Where("id=?", id).Select()
@@ -117,7 +180,7 @@ func (r *PGRepo) updateEmployeeByID(ctx context.Context, employee *Employee) err
 	if employee.Mobile != "" {
 		query.Set("mobile =?", employee.Mobile)
 	}
-	if employee.Salary > 0 {
+	if employee.Salary != 0 {
 		query.Set("salary=?", employee.Salary)
 	}
 	query.Set("updated_at=?", time.Now())
@@ -133,4 +196,61 @@ func (r *PGRepo) softDeleteEmployeeByID(ctx context.Context, req Employee) (*Emp
 	_, err := r.Db.ModelContext(ctx, &employee).Set("is_active=?", false).Where("id = ?", employee.ID).Update(&req)
 	r.Mutex.Unlock()
 	return employee, err
+}
+
+func TestUpsertEmployeeRegistration(t *testing.T) {
+	repo := setupTest()
+	tx, err := repo.Db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// defer tx.Close()
+
+	ctx := context.Background()
+	// defer repo.Db.Close()
+	req := &Employee{
+		Name:     "John Doe",
+		Position: "Developer",
+		Mobile:   "1234567890",
+		Salary:   50000,
+		IsActive: true,
+	}
+	fmt.Println("Before upsertEmployeeRegistration")
+	err = repo.upsertEmployeeRegistration(ctx, req)
+	if err != nil {
+		t.Fatalf("Error upserting employee registration: %v", err)
+	}
+	fmt.Println("After upsertEmployeeRegistration")
+	tx.Rollback()
+}
+
+func TestFetchALLEmployeeByFilter(t *testing.T) {
+	repo := setupTest()
+	tx, err := repo.Db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Close()
+
+	ctx := context.Background()
+	// defer repo.Db.Close()
+	req := model.EmployeeFilter{
+		Name:     "John Doe",
+		Position: "Developer",
+		Salary:   50000,
+	}
+	fmt.Println("Before upsertEmployeeRegistration")
+	data, pagination, err := repo.fetchALLEmployeeByFilter(ctx, req)
+	if err != nil {
+		t.Fatalf("Error upserting employee registration: %v", err)
+	}
+	if len(data) == 0 {
+		t.Error("Expected at least one employee, but got none.")
+	}
+
+	if pagination.TotalPages <= 0 {
+		t.Error("Expected positive total pages, but got non-positive value.")
+	}
+	fmt.Println("After upsertEmployeeRegistration")
+	tx.Rollback()
 }

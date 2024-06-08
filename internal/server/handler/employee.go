@@ -16,17 +16,17 @@ import (
 )
 
 type EmployeeHandler struct {
-	log             *logrus.Logger
-	employeeService *employee.Service
+	Log             *logrus.Logger
+	EmployeeService *employee.Service
 }
 
 func newEmployeeHandler(
-	log *logrus.Logger,
-	employeeService *employee.Service,
+	Log *logrus.Logger,
+	EmployeeService *employee.Service,
 ) *EmployeeHandler {
 	return &EmployeeHandler{
-		log,
-		employeeService,
+		Log,
+		EmployeeService,
 	}
 }
 
@@ -40,7 +40,7 @@ func (h *EmployeeHandler) EmployeeRegistration(c *gin.Context) {
 	defer func() {
 		if err != nil {
 			c.Error(err)
-			h.log.WithField("span", res).Warn(err.Error())
+			h.Log.WithField("span", res).Warn(err.Error())
 			return
 		}
 	}()
@@ -48,7 +48,7 @@ func (h *EmployeeHandler) EmployeeRegistration(c *gin.Context) {
 		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
-	err = h.employeeService.UpsertEmployeeRegistration(dCtx, req)
+	err = h.EmployeeService.UpsertEmployeeRegistration(dCtx, req)
 	if err != nil {
 		err = er.New(err, er.UncaughtException).SetStatus(http.StatusInternalServerError)
 		return
@@ -69,17 +69,17 @@ func (h *EmployeeHandler) FetchEmployee(c *gin.Context) {
 	defer func() {
 		if err != nil {
 			c.Error(err)
-			h.log.WithField("span", employeeID).Warn(err.Error())
+			h.Log.WithField("span", employeeID).Warn(err.Error())
 		}
 	}()
 
 	employeeID, err = strconv.Atoi(fmt.Sprint(c.Param("id")))
 	if err != nil {
-		h.log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
+		h.Log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
 		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
-	data, err := h.employeeService.FetchEmployeeByID(dCtx, employeeID)
+	data, err := h.EmployeeService.FetchEmployeeByID(dCtx, employeeID)
 	switch err {
 	case pg.ErrNoRows:
 		err = nil
@@ -111,7 +111,7 @@ func (h *EmployeeHandler) FetchALLEmployee(c *gin.Context) {
 	defer func() {
 		if err != nil {
 			c.Error(err)
-			h.log.WithField("span", employeeID).Warn(err.Error())
+			h.Log.WithField("span", employeeID).Warn(err.Error())
 		}
 	}()
 
@@ -119,7 +119,7 @@ func (h *EmployeeHandler) FetchALLEmployee(c *gin.Context) {
 		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
-	data, pagination, err := h.employeeService.FetchALLEmployeeByFilter(dCtx, req)
+	data, pagination, err := h.EmployeeService.FetchALLEmployeeByFilter(dCtx, req)
 	switch err {
 	case pg.ErrNoRows:
 		err = nil
@@ -151,7 +151,7 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 	defer func() {
 		if err != nil {
 			c.Error(err)
-			h.log.WithField("span", req).Warn(err.Error())
+			h.Log.WithField("span", req).Warn(err.Error())
 		}
 	}()
 
@@ -162,7 +162,7 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 
 	employeeID, err := strconv.Atoi(fmt.Sprint(c.Param("id")))
 	if err != nil {
-		h.log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
+		h.Log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
 		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
@@ -173,7 +173,7 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 		Position: req.Position,
 		Salary:   req.Salary,
 	}
-	err = h.employeeService.UpdateEmployeeByID(dCtx, newReq)
+	err = h.EmployeeService.UpdateEmployeeByID(dCtx, newReq)
 	switch err {
 	case pg.ErrNoRows:
 		err = nil
@@ -203,7 +203,7 @@ func (h *EmployeeHandler) DeleteEmployee(c *gin.Context) {
 	defer func() {
 		if err != nil {
 			c.Error(err)
-			h.log.WithField("span", req).Warn(err.Error())
+			h.Log.WithField("span", req).Warn(err.Error())
 		}
 	}()
 
@@ -212,7 +212,7 @@ func (h *EmployeeHandler) DeleteEmployee(c *gin.Context) {
 		return
 	}
 
-	Data, err := h.employeeService.SoftDeleteEmployeeByID(dCtx, req)
+	Data, err := h.EmployeeService.SoftDeleteEmployeeByID(dCtx, req)
 	if err != nil {
 		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
 		return
