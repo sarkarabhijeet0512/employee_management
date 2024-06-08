@@ -5,6 +5,7 @@ import (
 	"employee_management/utils"
 	model "employee_management/utils/models"
 	"math"
+	"sync"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -16,8 +17,8 @@ type Repository interface {
 	upsertEmployeeRegistration(context.Context, *Employee) error
 	fetchEmployeeByID(context.Context, int) (*Employee, error)
 	fetchALLEmployeeByFilter(context.Context, model.EmployeeFilter) ([]Employee, *model.Pagination, error)
-	updateEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error)
 	softDeleteEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error)
+	updateEmployeeByID(ctx context.Context, employee *Employee) error
 }
 
 // NewRepositoryIn is function param struct of func `NewRepository`
@@ -30,8 +31,9 @@ type NewRepositoryIn struct {
 
 // PGRepo is postgres implementation
 type PGRepo struct {
-	log *logrus.Logger
-	db  *pg.DB
+	log   *logrus.Logger
+	db    *pg.DB
+	mutex sync.RWMutex
 }
 
 // NewDBRepository returns a new persistence layer object which can be used for
@@ -57,6 +59,7 @@ func (r *PGRepo) fetchEmployeeByID(ctx context.Context, id int) (*Employee, erro
 	err := r.db.ModelContext(ctx, employee).Where("id=?", id).Select()
 	return employee, err
 }
+
 func (r *PGRepo) fetchALLEmployeeByFilter(ctx context.Context, filter model.EmployeeFilter) ([]Employee, *model.Pagination, error) {
 	var (
 		employees []Employee
@@ -100,16 +103,34 @@ func (r *PGRepo) fetchALLEmployeeByFilter(ctx context.Context, filter model.Empl
 	p.CurrentPage = filter.Page
 	p.TotalPages = int(math.Ceil(float64(count) / float64(filter.Limit)))
 	return employees, &p, err
-
 }
 
-func (r *PGRepo) updateEmployeeByID(ctx context.Context, employee Employee) (*Employee, error) {
-	_, err := r.db.ModelContext(ctx, &employee).Where("id = ?", employee.ID).Update(&employee)
-	return nil, err
+func (r *PGRepo) updateEmployeeByID(ctx context.Context, employee *Employee) error {
+
+	query := r.db.ModelContext(ctx, employee)
+	if employee.Name != "" {
+		query.Set("name =? ", employee.Name)
+	}
+	if employee.Position != "" {
+		query.Set("position =?", employee.Position)
+	}
+	if employee.Mobile != "" {
+		query.Set("mobile =?", employee.Mobile)
+	}
+	if employee.Salary != 0 {
+		query.Set("salary=?", employee.Salary)
+	}
+	query.Set("updated_at=?", time.Now())
+	r.mutex.Lock()
+	_, err := query.Where("id=?", employee.ID).Returning("*").Update()
+	r.mutex.Unlock()
+	return err
 }
 
 func (r *PGRepo) softDeleteEmployeeByID(ctx context.Context, req Employee) (*Employee, error) {
 	employee := &Employee{}
+	r.mutex.Lock()
 	_, err := r.db.ModelContext(ctx, &employee).Set("is_active=?", false).Where("id = ?", employee.ID).Update(&req)
+	r.mutex.Unlock()
 	return employee, err
 }

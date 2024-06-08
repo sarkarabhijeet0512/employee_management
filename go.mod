@@ -6,11 +6,13 @@ require (
 	github.com/getsentry/sentry-go v0.28.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-pg/pg/v10 v10.13.0
+	github.com/go-playground/validator/v10 v10.20.0
 	github.com/lib/pq v1.10.9
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	github.com/toorop/gin-logrus v0.0.0-20210225092905-2c785434f26f
+	github.com/yusufsyaifudin/gopg-mock v0.0.0-20191216100327-58f68294db5b
 	go.uber.org/fx v1.22.0
 	go.uber.org/zap v1.27.0
 )
@@ -20,13 +22,15 @@ require (
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/codemodus/kace v0.5.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
+	github.com/go-pg/pg/v9 v9.1.0 // indirect
+	github.com/go-pg/urlstruct v0.2.9 // indirect
 	github.com/go-pg/zerochecker v0.2.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect

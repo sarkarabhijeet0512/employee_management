@@ -145,7 +145,7 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 	var (
 		err  error
 		dCtx = context.Background()
-		req  = employee.Employee{}
+		req  = &model.UpdateEmployeeReq{}
 		res  = model.GenericRes{}
 	)
 	defer func() {
@@ -160,15 +160,37 @@ func (h *EmployeeHandler) UpdateEmployee(c *gin.Context) {
 		return
 	}
 
-	data, err := h.employeeService.UpdateEmployeeByID(dCtx, req)
+	employeeID, err := strconv.Atoi(fmt.Sprint(c.Param("id")))
 	if err != nil {
-		err = er.New(err, er.UserNotFound).SetStatus(http.StatusNotFound)
+		h.log.WithField("span", employeeID).Info("error while converting string to int: " + err.Error())
+		err = er.New(err, er.InvalidRequestBody).SetStatus(http.StatusBadRequest)
 		return
 	}
-	res.Message = "Updated Successfully"
-	res.Success = true
-	res.Data = data
-	c.JSON(http.StatusOK, res)
+	newReq := &employee.Employee{
+		ID:       employeeID,
+		Name:     req.Name,
+		Mobile:   req.Mobile,
+		Position: req.Position,
+		Salary:   req.Salary,
+	}
+	err = h.employeeService.UpdateEmployeeByID(dCtx, newReq)
+	switch err {
+	case pg.ErrNoRows:
+		err = nil
+		res.Message = "Employee Not found"
+		res.Success = true
+		c.JSON(http.StatusOK, res)
+		return
+	case nil:
+		res.Message = "Updated Sucessfully"
+		res.Success = true
+		res.Data = req
+		c.JSON(http.StatusOK, res)
+		return
+	default:
+		err = er.New(err, er.UncaughtException).SetStatus(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EmployeeHandler) DeleteEmployee(c *gin.Context) {

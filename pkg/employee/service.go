@@ -23,22 +23,39 @@ func NewService(conf *viper.Viper, log *logrus.Logger, Repo Repository) *Service
 	}
 }
 
-func (s *Service) UpsertEmployeeRegistration(dCtx context.Context, req *Employee) error {
-	return s.Repo.upsertEmployeeRegistration(dCtx, req)
+// The UpsertEmployeeRegistration function is a method within a service that either inserts
+// a new employee registration or updates an existing one if mobile number is already registered,
+// based on the provided employee details.It interacts with a dbrepository to perform database
+// operations and returns an error if any issues arise during the process.
+func (s *Service) UpsertEmployeeRegistration(ctx context.Context, employee *Employee) error {
+	return s.Repo.upsertEmployeeRegistration(ctx, employee)
 }
 
-func (s *Service) FetchEmployeeByID(dCtx context.Context, id int) (res *Employee, err error) {
-	return s.Repo.fetchEmployeeByID(dCtx, id)
+// The FetchEmployeeByID function, part of a service, retrieves an employee's information by
+// their unique identifier. It utilizes a dbrepository to execute the database query, returning
+// the employee's data or an error if the operation fails.
+func (s *Service) FetchEmployeeByID(ctx context.Context, id int) (*Employee, error) {
+	return s.Repo.fetchEmployeeByID(ctx, id)
 }
 
-func (s *Service) FetchALLEmployeeByFilter(dCtx context.Context, req model.EmployeeFilter) (res []Employee, pagination *model.Pagination, err error) {
-	return s.Repo.fetchALLEmployeeByFilter(dCtx, req)
+// The FetchALLEmployeeByFilter function, belonging to a service, retrieves multiple employees
+// based on a provided filters. It utilizes a dbrepository to execute the query and returns a slice
+// of employee data along with pagination information or an error if the operation fails.
+func (s *Service) FetchALLEmployeeByFilter(ctx context.Context, employeeFilter model.EmployeeFilter) ([]Employee, *model.Pagination, error) {
+	return s.Repo.fetchALLEmployeeByFilter(ctx, employeeFilter)
 }
 
-func (s *Service) UpdateEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error) {
-	return s.Repo.updateEmployeeByID(dCtx, req)
+// The UpdateEmployeeByID function, part of a service, updates an existing employee's information
+// using their unique identifier. It interacts with a dbrepository to execute the update operation
+// and returns an error if the process encounters any issues.
+func (s *Service) UpdateEmployeeByID(ctx context.Context, employee *Employee) error {
+	return s.Repo.updateEmployeeByID(ctx, employee)
 }
 
-func (s *Service) SoftDeleteEmployeeByID(dCtx context.Context, req Employee) (res *Employee, err error) {
-	return s.Repo.softDeleteEmployeeByID(dCtx, req)
+// The SoftDeleteEmployeeByID function, within a service, performs a soft delete operation on an
+// employee record based on the provided employee details. It interacts with a dbrepository to
+// execute the soft delete operation and returns either the deleted employee data or an error if
+// the operation encounters any issues.
+func (s *Service) SoftDeleteEmployeeByID(ctx context.Context, req Employee) (*Employee, error) {
+	return s.Repo.softDeleteEmployeeByID(ctx, req)
 }

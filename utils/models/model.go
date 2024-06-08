@@ -25,4 +25,14 @@ type (
 		TotalPages     int `json:"total_pages,omitempty"`
 		TotalDataCount int `json:"total_data_count,omitempty"`
 	}
+	UpdateEmployeeReq struct {
+		ID        int       `json:"id"`
+		Name      string    `json:"name"`
+		Mobile    string    `json:"mobile"`
+		Position  string    `json:"position"`
+		Salary    float64   `json:"salary"`
+		IsActive  bool      `json:"is_active"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
 )
