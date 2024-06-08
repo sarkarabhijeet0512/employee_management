@@ -49,14 +49,18 @@ func NewDBRepository(i NewRepositoryIn) (Repo Repository, err error) {
 }
 
 func (r *PGRepo) upsertEmployeeRegistration(ctx context.Context, req *Employee) error {
+	r.Mutex.Lock()
 	utils.SetGenericFieldValue(req)
 	_, err := r.Db.ModelContext(ctx, req).OnConflict("(mobile) DO UPDATE").Insert()
+	r.Mutex.Unlock()
 	return err
 }
 
 func (r *PGRepo) fetchEmployeeByID(ctx context.Context, id int) (*Employee, error) {
 	employee := &Employee{}
+	r.Mutex.RLock()
 	err := r.Db.ModelContext(ctx, employee).Where("id=?", id).Select()
+	r.Mutex.RUnlock()
 	return employee, err
 }
 
